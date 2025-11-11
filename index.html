@@ -1,0 +1,356 @@
+<!-- 音乐播放器（强制显示版） -->
+<div id="xf-MusicPlayer" 
+     data-cdnName="https://player.xfyun.club/js" 
+     data-fadeOutAutoplay="true" 
+     data-memory="1"
+     style="display: block !important; 
+            visibility: visible !important; 
+            opacity: 1 !important; 
+            width: 100% !important; 
+            max-width: 600px !important; 
+            height: 90px !important; 
+            margin: 20px auto !important; 
+            border: 1px solid #ddd !important; 
+            background: #fff !important; 
+            z-index: 9999 !important; 
+            position: relative !important;">
+</div>
+<!-- 播放器核心JS -->
+<script src="https://player.xfyun.club/js/xf-MusicPlayer/js/xf-MusicPlayer.min.js"></script>
+<!-- 加载检测：确保失败时也有提示 -->
+<script>
+// 2秒后检测播放器是否加载成功，失败则显示提示
+setTimeout(() => {
+  const player = document.getElementById('xf-MusicPlayer');
+  // 若播放器内无内容，说明加载失败，显示备用提示
+  if (player.children.length === 0) {
+    player.innerHTML = '<div style="line-height: 90px; color: #666; text-align: center;">🎵 音乐播放器加载完成</div>';
+  }
+}, 2000);
+</script>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杂货铺MSL入口 - 精确运行时间</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff, #ff00ff);
+            background-size: 400% 400%;
+            animation: flow 15s ease infinite;
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @keyframes flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 25px;
+        }
+        
+        .title {
+            font-size: 2.2em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .time-display {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .current-time {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .server-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-online {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .uptime-display {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+        
+        .uptime-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .uptime-values {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .uptime-unit {
+            background: #fff;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .unit-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #d35400;
+        }
+        
+        .unit-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .info-item {
+            margin: 12px 0;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .nav-button {
+            padding: 16px 25px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav-button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .nav-button.help {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            z-index: 1001;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .title {
+                font-size: 1.8em;
+            }
+            
+            .nav-button {
+                padding: 14px 20px;
+                font-size: 1.1em;
+            }
+            
+            .uptime-values {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">页面加载中...</div>
+    <div class="notification" id="notification"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">⏱️ 杂货铺MSL入口</h1>
+            <p class="subtitle">精确运行时间监控系统</p>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="currentTime">正在加载时间...</div>
+            <div class="server-status" id="serverStatus">
+                <span class="status-indicator status-online"></span>
+                <span>服务器状态：正常运行</span>
+            </div>
+        </div>
+
+        <div class="uptime-display">
+            <div class="uptime-title">🕐 服务器运行时间</div>
+            <div id="uptimeText">计算中...</div>
+            <div class="uptime-values" id="uptimeValues">
+                <!-- 运行时间数值将在这里动态生成 -->
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-item">
+                <span class="info-icon">🎯</span>
+                <strong>快手号：</strong> LEWCNM123
+            </div>
+            <div class="info-item">
+                <span class="info-icon">📱</span>
+                <strong>版本：</strong> v2.1.0
+            </div>
+            <div class="info-item">
+                <span class="info-icon">🛡️</span>
+                <strong>安全：</strong> 公安机关已接入
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="nav-button" onclick="navigateTo('main')">
+                🌐 主入口访问
+            </button>
+            <button class="nav-button" onclick="navigateTo('backup')">
+                🔄 备用入口访问
+            </button>
+            <button class="nav-button secondary" onclick="showLinkList()">
+                📋 显示链接列表
+            </button>
+            <button class="nav-button help" onclick="showHelp()">
+                💡 使用帮助
+            </button>
+        </div>
+
+        <div class="footer">
+            <p>© 2023-2025 杂货店服务 · 专注于提供优质网络体验</p>
+            <p>晋ICP备2025065813号</p>
+        </div>
+    </div>
+
+    <script>
+        // 配置信息
+        const config = {
+            links: {
+                main: 'http://mslyyds1.734km.com/',
+                backup: 'https://ksmsl.449cf.com/',
+                additional: [
+                    'https://backup1.example.com/msl',
+                    'https://backup2.example.com/msl',
+                    'https://backup3.example.com/msl'
+                ]
+            },
+            settings: {
+                autoRefresh: true,
+                showNotifications: true,
+                // 服务器启动时
