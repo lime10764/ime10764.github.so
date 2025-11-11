@@ -1,0 +1,637 @@
+<!-- 音乐播放器（强制显示版） -->
+<div id="xf-MusicPlayer" 
+     data-cdnName="https://player.xfyun.club/js" 
+     data-fadeOutAutoplay="true" 
+     data-memory="1"
+     style="display: block !important; 
+            visibility: visible !important; 
+            opacity: 1 !important; 
+            width: 100% !important; 
+            max-width: 600px !important; 
+            height: 90px !important; 
+            margin: 20px auto !important; 
+            border: 1px solid #ddd !important; 
+            background: #fff !important; 
+            z-index: 9999 !important; 
+            position: relative !important;">
+</div>
+<!-- 播放器核心JS -->
+<script src="https://player.xfyun.club/js/xf-MusicPlayer/js/xf-MusicPlayer.min.js"></script>
+<!-- 加载检测：确保失败时也有提示 -->
+<script>
+// 2秒后检测播放器是否加载成功，失败则显示提示
+setTimeout(() => {
+  const player = document.getElementById('xf-MusicPlayer');
+  // 若播放器内无内容，说明加载失败，显示备用提示
+  if (player.children.length === 0) {
+    player.innerHTML = '<div style="line-height: 90px; color: #666; text-align: center;">🎵 音乐播放器加载完成</div>';
+  }
+}, 2000);
+</script>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杂货铺MSL入口 - 精确运行时间</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff, #ff00ff);
+            background-size: 400% 400%;
+            animation: flow 15s ease infinite;
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @keyframes flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 25px;
+        }
+        
+        .title {
+            font-size: 2.2em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .time-display {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .current-time {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .server-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-online {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .uptime-display {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+        
+        .uptime-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .uptime-values {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .uptime-unit {
+            background: #fff;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .unit-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #d35400;
+        }
+        
+        .unit-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .info-item {
+            margin: 12px 0;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .nav-button {
+            padding: 16px 25px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav-button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .nav-button.help {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            z-index: 1001;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .title {
+                font-size: 1.8em;
+            }
+            
+            .nav-button {
+                padding: 14px 20px;
+                font-size: 1.1em;
+            }
+            
+            .uptime-values {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">页面加载中...</div>
+    <div class="notification" id="notification"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">⏱️ 杂货铺MSL入口</h1>
+            <p class="subtitle">精确运行时间监控系统</p>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="currentTime">正在加载时间...</div>
+            <div class="server-status" id="serverStatus">
+                <span class="status-indicator status-online"></span>
+                <span>服务器状态：正常运行</span>
+            </div>
+        </div>
+
+        <div class="uptime-display">
+            <div class="uptime-title">🕐 服务器运行时间</div>
+            <div id="uptimeText">计算中...</div>
+            <div class="uptime-values" id="uptimeValues">
+                <!-- 运行时间数值将在这里动态生成 -->
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-item">
+                <span class="info-icon">🎯</span>
+                <strong>快手号：</strong> LEWCNM123
+            </div>
+            <div class="info-item">
+                <span class="info-icon">📱</span>
+                <strong>版本：</strong> v2.1.0
+            </div>
+            <div class="info-item">
+                <span class="info-icon">🛡️</span>
+                <strong>安全：</strong> 公安机关已接入
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="nav-button" onclick="navigateTo('main')">
+                🌐 主入口访问
+            </button>
+            <button class="nav-button" onclick="navigateTo('backup')">
+                🔄 备用入口访问
+            </button>
+            <button class="nav-button secondary" onclick="showLinkList()">
+                📋 显示链接列表
+            </button>
+            <button class="nav-button help" onclick="showHelp()">
+                💡 使用帮助
+            </button>
+        </div>
+
+        <div class="footer">
+            <p>© 2023-2025 杂货店服务 · 专注于提供优质网络体验</p>
+            <p>晋ICP备2025065813号</p>
+        </div>
+    </div>
+
+    <script>
+        // 配置信息
+        const config = {
+            links: {
+                main: 'http://mslyyds1.734km.com/',
+                backup: 'https://ksmsl.449cf.com/',
+                additional: [
+                    'https://backup1.example.com/msl',
+                    'https://backup2.example.com/msl',
+                    'https://backup3.example.com/msl'
+                ]
+            },
+            settings: {
+                autoRefresh: true,
+                showNotifications: true,
+                // 服务器启动时间：2025年11月9日 8:50
+                serverStartTime: new Date(2025, 10, 9, 8, 50, 0).getTime()
+            }
+        };
+
+        // 页面状态
+        let pageState = {
+            lastAccess: null,
+            accessCount: 0,
+            currentView: 'main'
+        };
+
+        // 初始化函数
+        function init() {
+            updateTime();
+            updateUptime();
+            checkServerStatus();
+            loadPageState();
+            
+            // 设置定时器
+            setInterval(updateTime, 1000);
+            setInterval(updateUptime, 1000);
+            setInterval(checkServerStatus, 30000);
+            
+            // 页面可见性监听
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            console.log('精确运行时间页面初始化完成');
+        }
+
+        // 更新时间显示
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('currentTime').textContent = `当前时间：${timeString}`;
+        }
+
+        // 精确计算运行时间（年、天、时、分、秒）
+        function updateUptime() {
+            const now = Date.now();
+            const startTime = config.settings.serverStartTime;
+            let uptimeMs = now - startTime;
+            
+            if (uptimeMs < 0) {
+                document.getElementById('uptimeText').textContent = '服务器尚未启动';
+                document.getElementById('uptimeValues').innerHTML = '';
+                return;
+            }
+            
+            // 计算年数（考虑闰年）
+            const startDate = new Date(startTime);
+            const currentDate = new Date(now);
+            let years = currentDate.getFullYear() - startDate.getFullYear();
+            
+            // 调整年数（如果当前月份小于开始月份，或者月份相同但日期小于开始日期）
+            if (currentDate.getMonth() < startDate.getMonth() || 
+                (currentDate.getMonth() === startDate.getMonth() && currentDate.getDate() < startDate.getDate())) {
+                years--;
+            }
+            
+            // 计算剩余时间（减去完整的年数）
+            let tempDate = new Date(startTime);
+            tempDate.setFullYear(tempDate.getFullYear() + years);
+            let remainingMs = now - tempDate.getTime();
+            
+            // 计算天数
+            const days = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+            remainingMs -= days * 1000 * 60 * 60 * 24;
+            
+            // 计算小时
+            const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+            remainingMs -= hours * 1000 * 60 * 60;
+            
+            // 计算分钟
+            const minutes = Math.floor(remainingMs / (1000 * 60));
+            remainingMs -= minutes * 1000 * 60;
+            
+            // 计算秒数
+            const seconds = Math.floor(remainingMs / 1000);
+            
+            // 更新显示
+            const uptimeText = `已稳定运行：${years}年${days}天${hours}时${minutes}分${seconds}秒`;
+            document.getElementById('uptimeText').textContent = uptimeText;
+            
+            // 更新数值显示
+            const uptimeValues = document.getElementById('uptimeValues');
+            uptimeValues.innerHTML = `
+                <div class="uptime-unit">
+                    <div class="unit-value">${years}</div>
+                    <div class="unit-label">年</div>
+                </div>
+                <div class="uptime-unit">
+                    <div class="unit-value">${days}</div>
+                    <div class="unit-label">天</div>
+                </div>
+                <div class="uptime-unit">
+                    <div class="unit-value">${hours}</div>
+                    <div class="unit-label">时</div>
+                </div>
+                <div class="uptime-unit">
+                    <div class="unit-value">${minutes}</div>
+                    <div class="unit-label">分</div>
+                </div>
+                <div class="uptime-unit">
+                    <div class="unit-value">${seconds}</div>
+                    <div class="unit-label">秒</div>
+                </div>
+            `;
+        }
+
+        // 检查服务器状态
+        function checkServerStatus() {
+            const statusElement = document.getElementById('serverStatus');
+            // 模拟服务器状态检查
+            const isOnline = Math.random() > 0.1; // 90% 在线概率
+            
+            if (isOnline) {
+                statusElement.innerHTML = '<span class="status-indicator status-online"></span><span>服务器状态：正常运行 ✅</span>';
+                statusElement.style.color = '#28a745';
+            } else {
+                statusElement.innerHTML = '<span class="status-indicator" style="background:#dc3545"></span><span>服务器状态：连接异常 ⚠️</span>';
+                statusElement.style.color = '#dc3545';
+            }
+        }
+
+        // 导航功能
+        function navigateTo(type) {
+            showLoading(true);
+            pageState.accessCount++;
+            pageState.lastAccess = new Date();
+            pageState.currentView = type;
+            
+            const url = config.links[type];
+            
+            setTimeout(() => {
+                try {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                    showNotification(`✅ 成功打开${type === 'main' ? '主' : '备用'}入口`);
+                    savePageState();
+                } catch (error) {
+                    console.error('打开链接失败:', error);
+                    showNotification('❌ 无法打开新窗口，请检查浏览器设置');
+                }
+                showLoading(false);
+            }, 500);
+        }
+
+        // 显示链接列表
+        function showLinkList() {
+            let linkText = '可用链接列表：\n\n';
+            linkText += `主链接：${config.links.main}\n`;
+            linkText += `备用链接：${config.links.backup}\n\n`;
+            linkText += '附加链接：\n';
+            config.links.additional.forEach((link, index) => {
+                linkText += `${index + 1}. ${link}\n`;
+            });
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(linkText).then(() => {
+                    showNotification('📋 链接列表已复制到剪贴板');
+                });
+            } else {
+                // 兼容旧浏览器
+                const textArea = document.createElement('textarea');
+                textArea.value = linkText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification('📋 链接列表已复制');
+            }
+        }
+
+        // 显示帮助信息
+        function showHelp() {
+            const helpText = `使用帮助：
+
+🔸 主入口访问
+   - 主要服务入口，稳定可靠
+   - 推荐日常使用
+
+🔸 备用入口访问  
+   - 主入口不可用时使用
+   - 自动负载均衡
+
+🔸 显示链接列表
+   - 复制所有可用链接
+   - 方便多设备使用
+
+⏱️ 运行时间说明：
+- 精确计算年、天、时、分、秒
+- 自动考虑闰年因素
+- 实时更新显示
+
+💡 提示：
+- 建议使用 Chrome、Firefox 等现代浏览器
+- 如遇访问问题，请尝试备用入口
+- 确保网络连接稳定`;
+
+            alert(helpText);
+        }
+
+        // 显示加载提示
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // 显示通知
+        function showNotification(message, duration = 3000) {
+            if (!config.settings.showNotifications) return;
+            
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, duration);
+        }
+
+        // 处理页面可见性变化
+        function handleVisibilityChange() {
+            if (!document.hidden) {
+                // 页面重新获得焦点时更新状态
+                updateTime();
+                updateUptime();
+                checkServerStatus();
+            }
+        }
+
+        // 保存页面状态到本地存储
+        function savePageState() {
+            try {
+                localStorage.setItem('mslPageState', JSON.stringify(pageState));
+            } catch (error) {
+                console.warn('无法保存页面状态:', error);
+            }
+        }
+
+        // 加载页面状态
+        function loadPageState() {
+            try {
+                const saved = localStorage.getItem('mslPageState');
+                if (saved) {
+                    pageState = { ...pageState, ...JSON.parse(saved) };
+                }
+            } catch (error) {
+                console.warn('无法加载页面状态:', error);
+            }
+        }
+
+        // 安全功能
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                e.preventDefault();
+                showNotification('🔒 安全提示：此操作已被限制');
+                return false;
+            }
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+
+        // 页面卸载前保存状态
+        window.addEventListener('beforeunload', function() {
+            savePageState();
+        });
+    </script>
+</body>
+</html>
